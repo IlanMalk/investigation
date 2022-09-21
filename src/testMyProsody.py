@@ -1,7 +1,11 @@
 import myprosody as mysp
 import pickle
+import os
+dirname = os.path.dirname(__file__)
+filename = os.path.join(dirname, '../myprosody/myprosody')
+
 p="test" 
-c=r"C:\Users\Adam Blumenthal\Documents\Electrical Engineering\Year 4\Lab\investigation\myprosody\myprosody"
+c=filename
 mysp.mysptotal(p,c)
 mysp.myspgend(p,c)
 mysp.myspsyl(p,c)
