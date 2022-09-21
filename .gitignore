@@ -137,5 +137,6 @@ dmypy.json
 *.wav
 data/
 myprosody/
+*tryout.py
 
 
