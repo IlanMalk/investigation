@@ -128,8 +128,14 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# vscode
+.vscode/
 
 # custom for project
 *.txt
 *.csv
 *.wav
+data/
+myprosody/
+
+
