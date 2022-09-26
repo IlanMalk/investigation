@@ -6,7 +6,7 @@ import pandas as pd
 import re
 
 # fuction taken from myprosody library
-def run_praat_file(m: str, p: str) -> list[str] | None:
+def run_praat_file(m: str, p: str) -> list[float]:
     """
     m : filename
     p : path to dataset folder
@@ -28,24 +28,25 @@ def run_praat_file(m: str, p: str) -> list[str] | None:
         # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
         # print(objects[0])
         # This will print the info from the textgrid object, and objects[1] is a parselmouth.Data object with a TextGrid inside
-        z1 = str(objects[1])
-        z2 = z1.strip().split()
+        print(type(objects[1]))
+        z1: str = str(objects[1])
+        z2: list[float] = list(map(float, z1.strip().split()))
         return z2
     except:
-        z3 = 0
-        print("Try again the sound of the audio was not clear")
+        print("The PRAAT script failed")
+        return []
 
 def mysptotal(m: str, p: str) -> pd.DataFrame:
     """
     Overview: returns dataframe of all values
     """
-    z2 = run_praat_file(m, p)
-    z3 = np.array(z2)
-    z4 = np.array(z3)[np.newaxis]
-    z5 = z4.T
-    dataset: pd.DataFrame = pd.DataFrame({"file": m[0 : 20], "number_ of_syllables": z5[0, :], "number_of_pauses": z5[1, :], "rate_of_speech": z5[2, :], "articulation_rate": z5[3, :], "speaking_duration": z5[4, :],
-                        "original_duration": z5[5, :], "balance": z5[6, :], "f0_mean": z5[7, :], "f0_std": z5[8, :], "f0_median": z5[9, :], "f0_min": z5[10, :], "f0_max": z5[11, :],
-                        "f0_quantile25": z5[12, :], "f0_quan75": z5[13, :]})
+    z2: list[float] = run_praat_file(m, p)
+    # z3 = np.array(z2)
+    # z4 = np.array(z3)[np.newaxis]
+    # z5 = z4.T
+    dataset: pd.DataFrame = pd.DataFrame({"file": m[0 : 20], "number_ of_syllables": z2[0], "number_of_pauses": z2[1], "rate_of_speech": z2[2], "articulation_rate": z2[3], "speaking_duration": z2[4],
+                        "original_duration": z2[5], "balance": z2[6], "f0_mean": z2[7], "f0_std": z2[8], "f0_median": z2[9], "f0_min": z2[10], "f0_max": z2[11],
+                        "f0_quantile25": z2[12], "f0_quan75": z2[13]}, index = [0])
     return dataset
 
 def extract_prosodic_from_folder(p: str) -> pd.DataFrame:
@@ -55,16 +56,10 @@ def extract_prosodic_from_folder(p: str) -> pd.DataFrame:
     """
     path: str = p+"/"+"dataset"+"/"+"audioFiles"+"/"
     files: list[str] = os.listdir(path)
-    print(files)
     wav_files: list[str] = [os.path.splitext(x)[0] for x in files if re.search(r'\.wav$', x) ]
-    print(wav_files)
     features: list[pd.DataFrame] = [mysptotal(file, p) for file in wav_files]
     feature_df = pd.concat(features, ignore_index=True)
     return feature_df
-
-
-
-
 
 def main():
     curr_dirname = os.path.dirname(__file__)
