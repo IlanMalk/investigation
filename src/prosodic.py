@@ -1,4 +1,4 @@
-from parselmouth.praat import run_file
+from parselmouth.praat import run_file # type: ignore
 import pickle
 import os
 import numpy as np

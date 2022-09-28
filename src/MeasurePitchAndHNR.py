@@ -2,7 +2,7 @@ import glob
 import numpy as np
 import pandas as pd
 import parselmouth
-from parselmouth.praat import call
+from parselmouth.praat import call # type: ignore
 
 def measurePitch(voiceID, f0min, f0max, unit):
     sound = parselmouth.Sound(voiceID) # read the sound

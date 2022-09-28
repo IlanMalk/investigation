@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import parselmouth
 
-from parselmouth.praat import call
+from parselmouth.praat import call # type: ignore
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
