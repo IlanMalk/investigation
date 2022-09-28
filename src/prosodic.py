@@ -6,7 +6,7 @@ import pandas as pd
 import re
 
 # fuction taken from myprosody library
-def run_praat_file(m: str, p: str) -> list[float]:
+def run_praat_file(m: str, p: str):
     """
     m : filename
     p : path to dataset folder
@@ -14,11 +14,11 @@ def run_praat_file(m: str, p: str) -> list[float]:
 
     returns : objects outputed by the praat script
     """
-    sound: str = p+"/"+"dataset"+"/"+"audioFiles"+"/"+m+".wav"
-    sourcerun: str = p+"/"+"dataset"+"/"+"essen"+"/"+"myspsolution.praat"
-    path: str = p+"/"+"dataset"+"/"+"audioFiles"+"/"
+    sound: str = os.path.join(p, "dataset", "audioFiles", f"{m}.wav")
+    sourcerun: str = os.path.join(p, "dataset", "essen", "myspsolution.praat")
+    path: str = os.path.join(p, "dataset", "audioFiles", "")
 
-    assert os.path.isfile(sound), "Wrong path to audio file"
+    assert os.path.isfile(sound), f"Wrong path to audio file \n {sound}"
     assert os.path.isfile(sourcerun), "Wrong path to praat script"
     assert os.path.isdir(path), "Wrong path to audio files"
 
@@ -40,7 +40,7 @@ def mysptotal(m: str, p: str) -> pd.DataFrame:
     """
     Overview: returns dataframe of all values
     """
-    z2: list[float] = run_praat_file(m, p)
+    z2 = run_praat_file(m, p)
     # z3 = np.array(z2)
     # z4 = np.array(z3)[np.newaxis]
     # z5 = z4.T
@@ -55,15 +55,15 @@ def extract_prosodic_from_folder(p: str) -> pd.DataFrame:
     p: path to dataset folder
     """
     path: str = p+"/"+"dataset"+"/"+"audioFiles"+"/"
-    files: list[str] = os.listdir(path)
-    wav_files: list[str] = [os.path.splitext(x)[0] for x in files if re.search(r'\.wav$', x) ]
-    features: list[pd.DataFrame] = [mysptotal(file, p) for file in wav_files]
+    files = os.listdir(path)
+    wav_files = [os.path.splitext(x)[0] for x in files if re.search(r'\.wav$', x) ]
+    features = [mysptotal(file, p) for file in wav_files]
     feature_df = pd.concat(features, ignore_index=True)
     return feature_df
 
 def main():
     curr_dirname = os.path.dirname(__file__)
-    database_dirname = os.path.join(curr_dirname, '../myprosody/myprosody')
+    database_dirname = os.path.join(curr_dirname, os.path.pardir, 'myprosody', 'myprosody')
 
     # m: str = "test" # Audio File title "
     p: str = database_dirname # Path to the Audio_File directory (Python 3.7) 
