@@ -42,8 +42,8 @@ def main():
     # Sanity checks complete!
 
     # Call the appropriate function, based on our rank
-    curr_dirname = os.path.dirname(__file__)
-    database_dirname = os.path.join(curr_dirname, '../myprosody/myprosody')
+    curr_dirname = os.path.dirname(os.path.abspath(__file__))
+    database_dirname = os.path.join(curr_dirname, os.pardir, 'myprosody', 'myprosody')
 
     # m: str = "test" # Audio File title "
     p: str = database_dirname # Path to the Audio_File directory (Python 3.7) 
@@ -51,7 +51,7 @@ def main():
     feature_df: pd.DataFrame = extract_prosodic_from_folder(p, mpi_comm)
     
     if mpi_rank == 0: # root process
-        feature_df_combined: pd.DataFrame | Literal[1] = gather_and_combine(mpi_comm)
+        feature_df_combined = gather_and_combine(mpi_comm, feature_df)
         print(feature_df_combined)
 
     return 0
@@ -83,22 +83,19 @@ def extract_prosodic_from_folder(p: str, mpi_comm: MPIComm) -> pd.DataFrame:
     mpi_rank: int = mpi_comm.Get_rank()
     mpi_size: int = mpi_comm.Get_size()
 
-    path: str = p+"/"+"dataset"+"/"+"audioFiles"+"/"
+    path: str = os.path.join(p, "dataset", "audioFiles", "")
     files: list[str] = os.listdir(path)
     wav_files: list[str] = [os.path.splitext(x)[0] for x in files if re.search(r'\.wav$', x) ]
     features: list[pd.DataFrame] = [mysptotal(file, p) for [idx, file] in enumerate(wav_files) if mpi_rank == (idx % mpi_size)]
     feature_df = pd.concat(features, ignore_index=True)
     if mpi_rank != 0:
-            response = (
-                MPI.Get_processor_name(),
-                feature_df
-            )
+            response = feature_df
             mpi_comm.gather(response)
     
     return feature_df
 
 
-def gather_and_combine(mpi_comm: MPIComm):
+def gather_and_combine(mpi_comm: MPIComm, feature_df):
     """
     Function to be called by root process.
     Combines all responses into one dataframe
@@ -116,6 +113,10 @@ def gather_and_combine(mpi_comm: MPIComm):
         )
         return 1
 
+    print(type(response_array))
+    print(len(response_array))
+    response_array.append(feature_df)
+    print(len(response_array))
     feature_df_combined = pd.concat(response_array, ignore_index=True)
     return feature_df_combined
     
