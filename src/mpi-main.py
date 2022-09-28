@@ -21,8 +21,8 @@ def main():
 
     # Get our MPI communicator, our rank, and the world size.
     mpi_comm = MPI.COMM_WORLD
-    mpi_rank = mpi_comm.Get_rank()
-    mpi_size = mpi_comm.Get_size()
+    mpi_rank: int = mpi_comm.Get_rank()
+    mpi_size: int = mpi_comm.Get_size()
 
     # Do we only have one process?  If yes, then exit.
     if mpi_size == 1:
@@ -41,25 +41,20 @@ def main():
 
     # Sanity checks complete!
 
-    # Call the appropriate function, based on our rank
-    curr_dirname = os.path.dirname(os.path.abspath(__file__))
-    database_dirname = os.path.join(curr_dirname, os.pardir, 'myprosody', 'myprosody')
-
-    # m: str = "test" # Audio File title "
-    p: str = database_dirname # Path to the Audio_File directory (Python 3.7) 
-
-    feature_df: pd.DataFrame = extract_prosodic_from_folder(p, mpi_comm)
+    # the myprosody 'database' folder should be at ../myprosody/myprosody
+    curr_dirname: str = os.path.dirname(os.path.abspath(__file__))
+    database_dir: str = os.path.join(curr_dirname, os.pardir, 'myprosody', 'myprosody')
+    # each process extracts features from files partitioned to it and returns a dataframe
+    feature_df: pd.DataFrame = extract_prosodic_from_folder(database_dir, mpi_comm)
     
-    if mpi_rank == 0: # root process
+    # root process combines the dataframes
+    if mpi_rank == 0: 
         feature_df_combined = gather_and_combine(mpi_comm, feature_df)
         print(feature_df_combined)
-
     return 0
 
 
 
-# This program has two parts: The controller and the worker part.
-# The controller is executed by rank 0; the workers by everyone else.
 # SOME TERMINOLOGY:
 # MPI World: All of the MPI processes, spawned by `mpirun` or SLURM/srun.
 # MPI Size: The number of MPI slots (or SLURM tasks).
@@ -69,14 +64,9 @@ def main():
 # MPI Rank: An integer number, in the range [0, MPI size).
 #     The MPI rank is unique to each worker.
 
-# This program follows the convention that rank 0 is the "controller", and all
-# non-zero ranks are "workers".  This is important when using things like
-# broadcast, or scatter/gather.  But if you are only doing simple send/receive
-# (which we do not), then you don't need to stick to the controller-worker
-# paradigm.  But it's still a good idea!
 def extract_prosodic_from_folder(p: str, mpi_comm: MPIComm) -> pd.DataFrame:
     """
-    Extracts prosodic feature from all .wav files in dataset
+    Extracts prosodic features from all .wav files in dataset that are partitioned to the particular process
     p: path to dataset folder
     """
 
@@ -99,10 +89,13 @@ def gather_and_combine(mpi_comm: MPIComm, feature_df):
     """
     Function to be called by root process.
     Combines all responses into one dataframe
+    
+    mpi_comm: the MPI communicator
+    feature_df: the dataframe computed by the root process
     """
     response_array = mpi_comm.gather(None)
     # Sanity check: Did we get back a response from everyone?
-    mpi_size = mpi_comm.Get_size()
+    mpi_size: int = mpi_comm.Get_size()
     if response_array is None:
         print("ERROR! Response array is none")
         return 1
@@ -113,11 +106,8 @@ def gather_and_combine(mpi_comm: MPIComm, feature_df):
         )
         return 1
 
-    print(type(response_array))
-    print(len(response_array))
     response_array.append(feature_df)
-    print(len(response_array))
-    feature_df_combined = pd.concat(response_array, ignore_index=True)
+    feature_df_combined: pd.DataFrame = pd.concat(response_array, ignore_index=True)
     return feature_df_combined
     
 # Run main()
