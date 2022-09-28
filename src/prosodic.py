@@ -22,19 +22,20 @@ def run_praat_file(m: str, p: str):
     assert os.path.isfile(sourcerun), "Wrong path to praat script"
     assert os.path.isdir(path), "Wrong path to audio files"
 
-    try:
-        objects = run_file(sourcerun, -20, 2, 0.3, "yes",
-                           sound, path, 80, 400, 0.01, capture_output=True)
-        # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
-        # print(objects[0])
-        # This will print the info from the textgrid object, and objects[1] is a parselmouth.Data object with a TextGrid inside
-        print(type(objects[1]))
-        z1: str = str(objects[1])
-        z2: list[float] = list(map(float, z1.strip().split()))
-        return z2
-    except:
-        print("The PRAAT script failed")
-        return []
+    # try:
+    print(sourcerun)
+    objects = run_file(sourcerun, -20, 2, 0.3, "yes",
+                        sound, path, 80, 400, 0.01, capture_output=True)
+    # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
+    # print(objects[0])
+    # This will print the info from the textgrid object, and objects[1] is a parselmouth.Data object with a TextGrid inside
+    # print(type(objects[1]))
+    z1: str = str(objects[1])
+    z2: list[float] = list(map(float, z1.strip().split()))
+    return z2
+    # except:
+    #     print("The PRAAT script failed")
+    #     return []
 
 def mysptotal(m: str, p: str) -> pd.DataFrame:
     """
@@ -54,7 +55,7 @@ def extract_prosodic_from_folder(p: str) -> pd.DataFrame:
     Extracts prosodic feature from all .wav files in dataset
     p: path to dataset folder
     """
-    path: str = p+"/"+"dataset"+"/"+"audioFiles"+"/"
+    path: str = os.path.join(p, "dataset", "audioFiles", "")
     files = os.listdir(path)
     wav_files = [os.path.splitext(x)[0] for x in files if re.search(r'\.wav$', x) ]
     features = [mysptotal(file, p) for file in wav_files]
@@ -62,11 +63,13 @@ def extract_prosodic_from_folder(p: str) -> pd.DataFrame:
     return feature_df
 
 def main():
-    curr_dirname = os.path.dirname(__file__)
+    curr_dirname = os.path.dirname(os.path.abspath(__file__))
+    print(curr_dirname) 
     database_dirname = os.path.join(curr_dirname, os.path.pardir, 'myprosody', 'myprosody')
 
     # m: str = "test" # Audio File title "
-    p: str = database_dirname # Path to the Audio_File directory (Python 3.7) 
+    p: str = database_dirname # Path to the Audio_File directory (Python 3.7)
+
 
     feature_df: pd.DataFrame = extract_prosodic_from_folder(p)
     # feature_df: pd.DataFrame = mysptotal(m, p)
