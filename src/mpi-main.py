@@ -1,14 +1,18 @@
 # library imports
 from cmath import isnan
+import numpy as np
+import glob
 from mpi4py import MPI
 from os import environ
 from typing import Union, List, Tuple, Literal
 import pandas as pd
 import os
 import re
+import parselmouth
 
 # custom code imports
 from prosodic import mysptotal
+from MeasurePitchAndHNR import measurePitch
 
 MPIComm = Union[MPI.Intracomm, MPI.Intercomm]
 
@@ -43,9 +47,10 @@ def main():
 
     # the myprosody 'database' folder should be at ../myprosody/myprosody
     curr_dirname: str = os.path.dirname(os.path.abspath(__file__))
-    database_dir: str = os.path.join(curr_dirname, os.pardir, 'myprosody', 'myprosody')
+    database_dir: str = os.path.join(curr_dirname, os.pardir)
     # each process extracts features from files partitioned to it and returns a dataframe
-    feature_df: pd.DataFrame = extract_prosodic_from_folder(database_dir, mpi_comm)
+    # feature_df: pd.DataFrame = extract_prosodic_from_folder(database_dir, mpi_comm)
+    feature_df: pd.DataFrame = extract_pitch_from_folder(database_dir, mpi_comm)
     
     # root process combines the dataframes
     if mpi_rank == 0: 
@@ -63,26 +68,60 @@ def main():
 #     (Or, with `mpirun`, by providing a list of hosts on which to run.)
 # MPI Rank: An integer number, in the range [0, MPI size).
 #     The MPI rank is unique to each worker.
-
-def extract_prosodic_from_folder(p: str, mpi_comm: MPIComm) -> pd.DataFrame:
+def extract_prosodic_from_folder(dataset_folder: str, mpi_comm: MPIComm) -> pd.DataFrame:
     """
     Extracts prosodic features from all .wav files in dataset that are partitioned to the particular process
-    p: path to dataset folder
+    dataset_folder: path to dataset folder
     """
 
     mpi_rank: int = mpi_comm.Get_rank()
     mpi_size: int = mpi_comm.Get_size()
 
-    path: str = os.path.join(p, "dataset", "audioFiles", "")
+    path: str = os.path.join(dataset_folder, "dataset", "audioFiles", "")
     files: list[str] = os.listdir(path)
     wav_files: list[str] = [os.path.splitext(x)[0] for x in files if re.search(r'\.wav$', x) ]
-    features: list[pd.DataFrame] = [mysptotal(file, p) for [idx, file] in enumerate(wav_files) if mpi_rank == (idx % mpi_size)]
+    features: list[pd.DataFrame] = [mysptotal(file, dataset_folder) for (idx, file) in enumerate(wav_files) if mpi_rank == (idx % mpi_size)]
     feature_df = pd.concat(features, ignore_index=True)
     if mpi_rank != 0:
             response = feature_df
             mpi_comm.gather(response)
     
     return feature_df
+
+def extract_pitch_from_folder(dataset_folder, mpi_comm: MPIComm) -> pd.DataFrame:
+    file_list = []
+    mean_F0_list = []
+    sd_F0_list = []
+    hnr_list = []
+
+    mpi_rank: int = mpi_comm.Get_rank()
+    mpi_size: int = mpi_comm.Get_size()
+
+    print(f"Rank {mpi_rank}")
+    audio_file_string = os.path.join(dataset_folder, "dataset", "audioFiles", "*.wav")
+    print(audio_file_string)
+    print(len(glob.glob(audio_file_string)))
+    for (idx, wave_file) in enumerate(glob.glob(audio_file_string)):
+        print(f"Index {idx}")
+        if mpi_rank == (idx % mpi_size):
+            print("Processing")
+            sound = parselmouth.Sound(wave_file)
+            (meanF0, stdevF0, hnr) = measurePitch(sound, 75, 500, "Hertz")
+            file_list.append(wave_file) # make an ID list
+            mean_F0_list.append(meanF0) # make a mean F0 list
+            sd_F0_list.append(stdevF0) # make a sd F0 list
+            hnr_list.append(hnr)
+        
+    df = pd.DataFrame(np.column_stack([file_list, mean_F0_list, sd_F0_list, hnr_list]), 
+                        columns=['voiceID', 'meanF0Hz', 'stdevF0Hz', 'HNR'])  #add these lists to pandas in the right order
+
+    if mpi_rank != 0:
+        response = df
+        mpi_comm.gather(response)
+
+    return df
+
+
 
 
 def gather_and_combine(mpi_comm: MPIComm, feature_df):
@@ -109,10 +148,14 @@ def gather_and_combine(mpi_comm: MPIComm, feature_df):
     response_array.append(feature_df)
     feature_df_combined: pd.DataFrame = pd.concat(response_array, ignore_index=True)
     return feature_df_combined
-    
+
+
+
+
 # Run main()
 if __name__ == '__main__':
     import sys
     sys.exit(main())
 
+# mpiexec -n 2 python3 mpi-main.py
 
