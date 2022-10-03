@@ -6,6 +6,7 @@ Hutto, C.J. & Gilbert, E.E. (2014). VADER: A Parsimonious Rule-based Model for S
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import glob
 import csv
+import os
     #note: depending on how you installed (e.g., using source code download versus pip install), you may need to import like this:
     #from vaderSentiment import SentimentIntensityAnalyzer
 
@@ -19,7 +20,7 @@ def dict_mean(dict_list):
 def main():
     overall_scores = []
     # path = "../../data/IBM-Debater-DR-EMNLP-2019.r4.full/full/speeches/trs.txt/*.txt"
-    path = "../../data/IBM-Debater-DR-ACL-2020.r5.no_wavs/no_wavs/trs.txt/*.txt"
+    path = os.path.join(os.path.dirname(__file__), os.pardir, "dataset", "textFiles", "*.txt")
     for filename in glob.glob(path):
         with open(filename, 'r') as f:
             sentences = f.readlines()
@@ -31,20 +32,22 @@ def main():
             vs_scores.append(vs)
 
         vs_mean = dict_mean(vs_scores)
+        vs_mean['filename'] = os.path.basename(filename)
         # print(vs_mean)
         overall_scores.append(vs_mean)
 
     print("-----------------------------------------------------")
     # write overall_scores (scores for each speech) to file
-    keys = overall_scores[0].keys()
+    # keys = overall_scores[0].keys()
+    keys = ['filename','pos', 'neg', 'neu', 'compound']
 
     with open('vader.csv', 'w', newline='') as output_file:
         dict_writer = csv.DictWriter(output_file, keys)
         dict_writer.writeheader()
         dict_writer.writerows(overall_scores)
 
-    overall_vs = dict_mean(overall_scores)
-    print(overall_vs)
+    # overall_vs = dict_mean(overall_scores)
+    # print(overall_vs)
 
 if __name__ == "__main__":
     main()
