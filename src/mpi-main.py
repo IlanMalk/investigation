@@ -12,7 +12,7 @@ import parselmouth
 
 # custom code imports
 from prosodic import mysptotal
-from MeasurePitchAndHNR import measurePitch
+from PitchJittchShimmerHNR import measurePitch
 
 MPIComm = Union[MPI.Intracomm, MPI.Intercomm]
 
@@ -50,7 +50,7 @@ def main():
     database_dir: str = os.path.join(curr_dirname, os.pardir)
     # each process extracts features from files partitioned to it and returns a dataframe
     # feature_df: pd.DataFrame = extract_prosodic_from_folder(database_dir, mpi_comm)
-    feature_df: pd.DataFrame = extract_pitch_from_folder(database_dir, mpi_comm)
+    feature_df: pd.DataFrame = extract_pitch_jitter_shimmer_from_folder(database_dir, mpi_comm)
     
     # root process combines the dataframes
     if mpi_rank == 0: 
@@ -88,11 +88,22 @@ def extract_prosodic_from_folder(dataset_folder: str, mpi_comm: MPIComm) -> pd.D
     
     return feature_df
 
-def extract_pitch_from_folder(dataset_folder, mpi_comm: MPIComm) -> pd.DataFrame:
+def extract_pitch_jitter_shimmer_from_folder(dataset_folder, mpi_comm: MPIComm) -> pd.DataFrame:
     file_list = []
     mean_F0_list = []
     sd_F0_list = []
     hnr_list = []
+    localJitter_list = []
+    localabsoluteJitter_list = []
+    rapJitter_list = []
+    ppq5Jitter_list = []
+    ddpJitter_list = []
+    localShimmer_list = []
+    localdbShimmer_list = []
+    apq3Shimmer_list = []
+    aqpq5Shimmer_list = []
+    apq11Shimmer_list = []
+    ddaShimmer_list = []
 
     mpi_rank: int = mpi_comm.Get_rank()
     mpi_size: int = mpi_comm.Get_size()
@@ -106,15 +117,26 @@ def extract_pitch_from_folder(dataset_folder, mpi_comm: MPIComm) -> pd.DataFrame
         if mpi_rank == (idx % mpi_size):
             print("Processing")
             sound = parselmouth.Sound(wave_file)
-            (meanF0, stdevF0, hnr) = measurePitch(sound, 75, 500, "Hertz")
-            file_list.append(wave_file) # make an ID list
+            (meanF0, stdevF0, hnr, localJitter, localabsoluteJitter, rapJitter, ppq5Jitter, ddpJitter, localShimmer, localdbShimmer, apq3Shimmer, aqpq5Shimmer, apq11Shimmer, ddaShimmer) = measurePitch(sound, 75, 500, "Hertz")
+            file_list.append(os.path.basename(wave_file)) # make an ID list
             mean_F0_list.append(meanF0) # make a mean F0 list
             sd_F0_list.append(stdevF0) # make a sd F0 list
             hnr_list.append(hnr)
-        
-    df = pd.DataFrame(np.column_stack([file_list, mean_F0_list, sd_F0_list, hnr_list]), 
-                        columns=['voiceID', 'meanF0Hz', 'stdevF0Hz', 'HNR'])  #add these lists to pandas in the right order
-
+            localJitter_list.append(localJitter)
+            localabsoluteJitter_list.append(localabsoluteJitter)
+            rapJitter_list.append(rapJitter)
+            ppq5Jitter_list.append(ppq5Jitter)
+            ddpJitter_list.append(ddpJitter)
+            localShimmer_list.append(localShimmer)
+            localdbShimmer_list.append(localdbShimmer)
+            apq3Shimmer_list.append(apq3Shimmer)
+            aqpq5Shimmer_list.append(aqpq5Shimmer)
+            apq11Shimmer_list.append(apq11Shimmer)
+            ddaShimmer_list.append(ddaShimmer)
+    df = pd.DataFrame(np.column_stack([file_list, mean_F0_list, sd_F0_list, hnr_list, localJitter_list, localabsoluteJitter_list, rapJitter_list, ppq5Jitter_list, ddpJitter_list, localShimmer_list, localdbShimmer_list, apq3Shimmer_list, aqpq5Shimmer_list, apq11Shimmer_list, ddaShimmer_list]),
+                               columns=['voiceID', 'meanF0Hz', 'stdevF0Hz', 'HNR', 'localJitter', 'localabsoluteJitter', 'rapJitter', 
+                                        'ppq5Jitter', 'ddpJitter', 'localShimmer', 'localdbShimmer', 'apq3Shimmer', 'apq5Shimmer', 
+                                        'apq11Shimmer', 'ddaShimmer'])  #add these lists to pandas in the right order
     if mpi_rank != 0:
         response = df
         mpi_comm.gather(response)
