@@ -45,7 +45,7 @@ def main():
 
     # Sanity checks complete!
 
-    # the myprosody 'database' folder should be at ../myprosody/myprosody
+    # the 'dataset' folder should be at ../dataset
     curr_dirname: str = os.path.dirname(os.path.abspath(__file__))
     database_dir: str = os.path.join(curr_dirname, os.pardir)
     # each process extracts features from files partitioned to it and returns a dataframe
@@ -120,9 +120,6 @@ def extract_pitch_from_folder(dataset_folder, mpi_comm: MPIComm) -> pd.DataFrame
         mpi_comm.gather(response)
 
     return df
-
-
-
 
 def gather_and_combine(mpi_comm: MPIComm, feature_df):
     """
