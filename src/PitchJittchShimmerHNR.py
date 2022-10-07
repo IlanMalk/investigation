@@ -1,7 +1,9 @@
+from email.mime import audio
 import glob
 import numpy as np
 import pandas as pd
 import parselmouth
+import os
 
 from parselmouth.praat import call # type: ignore
 from sklearn.decomposition import PCA
@@ -23,12 +25,12 @@ def measurePitch(voiceID, f0min, f0max, unit):
     localShimmer =  call([sound, pointProcess], "Get shimmer (local)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
     localdbShimmer = call([sound, pointProcess], "Get shimmer (local_dB)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
     apq3Shimmer = call([sound, pointProcess], "Get shimmer (apq3)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
-    aqpq5Shimmer = call([sound, pointProcess], "Get shimmer (apq5)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
+    apq5Shimmer = call([sound, pointProcess], "Get shimmer (apq5)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
     apq11Shimmer =  call([sound, pointProcess], "Get shimmer (apq11)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
     ddaShimmer = call([sound, pointProcess], "Get shimmer (dda)", 0, 0, 0.0001, 0.02, 1.3, 1.6)
     
 
-    return meanF0, stdevF0, hnr, localJitter, localabsoluteJitter, rapJitter, ppq5Jitter, ddpJitter, localShimmer, localdbShimmer, apq3Shimmer, aqpq5Shimmer, apq11Shimmer, ddaShimmer
+    return pd.DataFrame({'meanF0': meanF0, 'stdevF0': stdevF0, 'hnr': hnr, 'localJitter': localJitter, 'localabsoluteJitter': localabsoluteJitter, 'rapJitter': rapJitter, 'ppq5Jitter': ppq5Jitter, 'ddpJitter': ddpJitter, 'localShimmer': localShimmer, 'localdbShimmer': localdbShimmer, 'apq3Shimmer': apq3Shimmer, 'apq5Shimmer': apq5Shimmer, 'apq11Shimmer': apq11Shimmer, 'ddaShimmer': ddaShimmer}, index = [0])
 def runPCA(df):
     #Z-score the Jitter and Shimmer measurements
     features = ['localJitter', 'localabsoluteJitter', 'rapJitter', 'ppq5Jitter', 'ddpJitter',
@@ -48,45 +50,19 @@ def runPCA(df):
 
 def main():
 
-    file_list = []
-    mean_F0_list = []
-    sd_F0_list = []
-    hnr_list = []
-    localJitter_list = []
-    localabsoluteJitter_list = []
-    rapJitter_list = []
-    ppq5Jitter_list = []
-    ddpJitter_list = []
-    localShimmer_list = []
-    localdbShimmer_list = []
-    apq3Shimmer_list = []
-    aqpq5Shimmer_list = []
-    apq11Shimmer_list = []
-    ddaShimmer_list = []
-
-    for wave_file in glob.glob("audio/*.wav"):
+    file_list: list[str] = []
+    feature_df_list: list[pd.DataFrame] = []
+    
+    audio_files = os.path.join(os.path.dirname(__file__), os.path.pardir, "dataset", "audioFiles", "*.wav")
+    for wave_file in glob.glob(audio_files):
+        file_list.append(os.path.basename(wave_file))
         sound = parselmouth.Sound(wave_file)
-        (meanF0, stdevF0, hnr, localJitter, localabsoluteJitter, rapJitter, ppq5Jitter, ddpJitter, localShimmer, localdbShimmer, apq3Shimmer, aqpq5Shimmer, apq11Shimmer, ddaShimmer) = measurePitch(sound, 75, 500, "Hertz")
-        file_list.append(wave_file) # make an ID list
-        mean_F0_list.append(meanF0) # make a mean F0 list
-        sd_F0_list.append(stdevF0) # make a sd F0 list
-        hnr_list.append(hnr)
-        localJitter_list.append(localJitter)
-        localabsoluteJitter_list.append(localabsoluteJitter)
-        rapJitter_list.append(rapJitter)
-        ppq5Jitter_list.append(ppq5Jitter)
-        ddpJitter_list.append(ddpJitter)
-        localShimmer_list.append(localShimmer)
-        localdbShimmer_list.append(localdbShimmer)
-        apq3Shimmer_list.append(apq3Shimmer)
-        aqpq5Shimmer_list.append(aqpq5Shimmer)
-        apq11Shimmer_list.append(apq11Shimmer)
-        ddaShimmer_list.append(ddaShimmer)
-    df = pd.DataFrame(np.column_stack([file_list, mean_F0_list, sd_F0_list, hnr_list, localJitter_list, localabsoluteJitter_list, rapJitter_list, ppq5Jitter_list, ddpJitter_list, localShimmer_list, localdbShimmer_list, apq3Shimmer_list, aqpq5Shimmer_list, apq11Shimmer_list, ddaShimmer_list]),
-                                columns=['voiceID', 'meanF0Hz', 'stdevF0Hz', 'HNR', 'localJitter', 'localabsoluteJitter', 'rapJitter', 
-                                            'ppq5Jitter', 'ddpJitter', 'localShimmer', 'localdbShimmer', 'apq3Shimmer', 'apq5Shimmer', 
-                                            'apq11Shimmer', 'ddaShimmer'])  #add these lists to pandas in the right order
-    pcaData = runPCA(df)
+        temp_df: pd.DataFrame = measurePitch(sound, 75, 500, "Hertz")
+        feature_df_list.append(temp_df)
+    df: pd.DataFrame = pd.concat(feature_df_list, ignore_index=True)
+    df.insert(loc=0, column="filename", value=file_list)
+    print(df)
+    pcaData: pd.DataFrame = runPCA(df)
 
     df = pd.concat([df, pcaData], axis=1)
 
