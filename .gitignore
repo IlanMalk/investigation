@@ -140,3 +140,4 @@ myprosody/
 *tryout.py
 dataset/
 profiling/
+*.prof
