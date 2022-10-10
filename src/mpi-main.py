@@ -1,3 +1,5 @@
+#!/bin/env python3
+
 # library imports
 import numpy as np
 import glob
@@ -51,10 +53,13 @@ def main():
     # each process extracts features from files partitioned to it and returns a dataframe
     # feature_df: pd.DataFrame = extract_prosodic_from_folder(parent_dirname, mpi_comm)
     feature_df: pd.DataFrame = extract_pitch_jitter_shimmer_from_folder(parent_dirname, mpi_comm)
+   
     
     # root process combines the dataframes
     if mpi_rank == 0: 
         feature_df_combined = gather_and_combine(mpi_comm, feature_df)
+        if type(feature_df_combined) is pd.DataFrame:
+            feature_df_combined.to_csv(os.path.join(os.pardir, "pitch_jitter_shimmer.csv"), encoding='utf-8', index=False)
         print(feature_df_combined)
 
     return 0
