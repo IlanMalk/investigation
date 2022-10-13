@@ -135,6 +135,7 @@ dmypy.json
 *.txt
 *.csv
 *.wav
+*.sph
 data/
 myprosody/
 *tryout.py
