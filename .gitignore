@@ -141,3 +141,4 @@ myprosody/
 dataset/
 profiling/
 *.prof
+*.err
