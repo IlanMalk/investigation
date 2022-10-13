@@ -58,7 +58,7 @@ def main():
     # root process combines the dataframes
     if mpi_rank == 0: 
         feature_df_combined = gather_and_combine(mpi_comm, feature_df)
-        if type(feature_df_combined) is pd.DataFrame:
+        if isinstance(feature_df_combined, pd.DataFrame):
             feature_df_combined.to_csv(os.path.join(os.pardir, "pitch_jitter_shimmer.csv"), encoding='utf-8', index=False)
         print(feature_df_combined)
 
