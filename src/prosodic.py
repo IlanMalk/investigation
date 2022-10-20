@@ -28,8 +28,13 @@ def run_praat_file(m: str, p: str):
     # objects[0] is a parselmouth.Sound object
     # objects[1] is the extracted data
     z1: str = str(objects[1])
-    z2: list[float] = list(map(float, z1.strip().split()))
-    return z2
+    try:
+        z2: list[float] = list(map(float, z1.strip().split()))
+        return z2
+    except:
+        print(f"z1 is {z1}")
+        print(sound)
+        return []
     # except:
     #     print("The PRAAT script failed")
     #     return []

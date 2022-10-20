@@ -143,7 +143,7 @@ def gather_and_combine(mpi_comm: MPIComm, feature_df):
 if __name__ == '__main__':
     sys.exit(main())
 
-# mpiexec -n 2 python3 mpi_prosodic.py
-# time mpiexec -hostfile /home/shared/machinefile -np 10 python3 -m mpi4py mpi_prosodic.py
+# mpiexec -n 2 python3 src/mpi_prosodic.py
+# time mpiexec -hostfile /home/shared/machinefile -np 32 python3 -m mpi4py src/mpi_prosodic.py
 
 
