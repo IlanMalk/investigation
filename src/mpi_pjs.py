@@ -12,6 +12,8 @@ import os
 import re
 import parselmouth
 import sys
+from pprogress import ProgressBar
+
 
 # custom code imports
 from prosodic import mysptotal
@@ -106,16 +108,21 @@ def extract_pitch_jitter_shimmer_from_folder(audio_dir: str, mpi_comm: MPIComm) 
         raise NotADirectoryError("ERROR: please enter a directory as a command line argument")   
     
     audio_file_string: str = os.path.join(audio_dir, "*.wav")
+    wave_files = glob.glob(audio_file_string)
+    files_for_process = len(wave_files) // mpi_size + int(mpi_rank < len(wave_files) % mpi_size)
+    progress_bar = ProgressBar(files_for_process)
 
-    for (idx, wave_file) in enumerate(glob.glob(audio_file_string)):
+    for (idx, wave_file) in enumerate(wave_files):
         if mpi_rank == (idx % mpi_size):
             sound = parselmouth.Sound(wave_file)
             feature_df: pd.DataFrame = measurePitch(sound, 75, 500, "Hertz")
             filename = os.path.basename(wave_file)
             feature_df.insert(loc=0, column="filename", value=[filename])
             feature_df_list.append(feature_df)
+            progress_bar.update()
 
     df: pd.DataFrame = pd.concat(feature_df_list, ignore_index=True)
+    progress_bar.done()
     if mpi_rank != 0:
         response = df
         mpi_comm.gather(response)
