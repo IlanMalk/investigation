@@ -1,7 +1,6 @@
 #!/bin/env python3
 
 # library imports
-from fileinput import filename
 import numpy as np
 import glob
 from mpi4py import MPI
@@ -12,8 +11,6 @@ import os
 import re
 import parselmouth
 import sys
-from pprogress import ProgressBar
-
 
 # custom code imports
 from prosodic import mysptotal
@@ -52,18 +49,15 @@ def main():
 
     # the 'dataset' folder should be at ../dataset
     curr_dirname: str = os.path.dirname(os.path.abspath(__file__))
-    # parent_dirname: str = os.path.join(curr_dirname, os.pardir)
-    audio_dir: str = sys.argv[1]
+    parent_dirname: str = os.path.join(curr_dirname, os.pardir)
     # each process extracts features from files partitioned to it and returns a dataframe
-    # feature_df: pd.DataFrame = extract_prosodic_from_folder(parent_dirname, mpi_comm)
-    feature_df: pd.DataFrame = extract_pitch_jitter_shimmer_from_folder(audio_dir, mpi_comm)
-   
+    feature_df: pd.DataFrame = extract_prosodic_from_folder(parent_dirname, mpi_comm)   
     
     # root process combines the dataframes
     if mpi_rank == 0: 
         feature_df_combined = gather_and_combine(mpi_comm, feature_df)
         if isinstance(feature_df_combined, pd.DataFrame):
-            feature_df_combined.to_csv(os.path.join(curr_dirname, os.pardir, "pitch_jitter_shimmer.csv"), encoding='utf-8', index=False)
+            feature_df_combined.to_csv(os.path.join(os.pardir, "prosodic.csv"), encoding='utf-8', index=False)
         print(feature_df_combined)
 
     return 0
@@ -97,32 +91,20 @@ def extract_prosodic_from_folder(dataset_folder: str, mpi_comm: MPIComm) -> pd.D
     
     return feature_df
 
-def extract_pitch_jitter_shimmer_from_folder(audio_dir: str, mpi_comm: MPIComm) -> pd.DataFrame:
+def extract_pitch_jitter_shimmer_from_folder(dataset_folder, mpi_comm: MPIComm) -> pd.DataFrame:
     file_list = []
     feature_df_list: list[pd.DataFrame] = []
     mpi_rank: int = mpi_comm.Get_rank()
     mpi_size: int = mpi_comm.Get_size()
 
-    # audio_file_string = os.path.join(dataset_folder, "dataset", "audioFiles", "*.wav")
-    if not os.path.isdir(audio_dir):
-        raise NotADirectoryError("ERROR: please enter a directory as a command line argument")   
-    
-    audio_file_string: str = os.path.join(audio_dir, "*.wav")
-    wave_files = glob.glob(audio_file_string)
-    files_for_process = len(wave_files) // mpi_size + int(mpi_rank < len(wave_files) % mpi_size)
-    progress_bar = ProgressBar(files_for_process)
-
-    for (idx, wave_file) in enumerate(wave_files):
+    audio_file_string = os.path.join(dataset_folder, "dataset", "audioFiles", "*.wav")
+    for (idx, wave_file) in enumerate(glob.glob(audio_file_string)):
         if mpi_rank == (idx % mpi_size):
             sound = parselmouth.Sound(wave_file)
             feature_df: pd.DataFrame = measurePitch(sound, 75, 500, "Hertz")
-            filename = os.path.basename(wave_file)
-            feature_df.insert(loc=0, column="filename", value=[filename])
             feature_df_list.append(feature_df)
-            progress_bar.update()
 
     df: pd.DataFrame = pd.concat(feature_df_list, ignore_index=True)
-    progress_bar.done()
     if mpi_rank != 0:
         response = df
         mpi_comm.gather(response)
@@ -161,7 +143,7 @@ def gather_and_combine(mpi_comm: MPIComm, feature_df):
 if __name__ == '__main__':
     sys.exit(main())
 
-# REMEMBER: IF ON CLUSTER, USE -hostfile or ssh away from head node
-# mpiexec -n 2 python3 mpi_pjs.py audio/
-# time mpiexec -hostfile /home/shared/machinefile -np 10 python3 -m mpi4py mpi_pjs.py
+# mpiexec -n 2 python3 src/mpi_prosodic.py
+# time mpiexec -hostfile /home/shared/machinefile -np 32 python3 -m mpi4py src/mpi_prosodic.py
+
 
