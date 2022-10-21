@@ -154,6 +154,7 @@ def gather_and_combine(mpi_comm: MPIComm, feature_df):
 if __name__ == '__main__':
     sys.exit(main())
 
+# REMEMBER: IF ON CLUSTER, USE -hostfile or ssh away from head node
 # mpiexec -n 2 python3 mpi_pjs.py audio/
 # time mpiexec -hostfile /home/shared/machinefile -np 10 python3 -m mpi4py mpi-main.py
 
