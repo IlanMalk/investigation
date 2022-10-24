@@ -133,6 +133,7 @@ dmypy.json
 
 # custom for project
 *.txt
+!requirements.txt
 *.csv
 *.wav
 *.sph
@@ -143,3 +144,4 @@ dataset/
 profiling/
 *.prof
 *.err
+*.ipynb
