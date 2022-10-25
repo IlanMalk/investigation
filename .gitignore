@@ -145,3 +145,4 @@ profiling/
 *.prof
 *.err
 *.ipynb
+*.sph
