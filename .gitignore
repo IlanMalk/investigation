@@ -146,3 +146,5 @@ profiling/
 *.err
 *.ipynb
 *.sph
+*.npy
+*.stm
