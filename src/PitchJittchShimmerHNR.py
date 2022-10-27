@@ -53,61 +53,64 @@ def measurePitchTed(stm, f0min, f0max, unit):
         # print(stm_list)
         # for stm in stm_list:
     parent_path = os.path.join(os.path.dirname(os.path.abspath(stm)), os.pardir)
+    
+    # extract info from transcript
     with open(stm, 'rt') as f:
         records = f.readlines()
+        filename: str = records[0].split()[0]
+
         for record in records:
             field = record.split()
 
-            # wave file name
-            wave_file = os.path.join(parent_path, 'sph/%s.sph.wav' % field[0])
-            wave_files.append(wave_file)
-
-            # label index
-            labels.append(preprocess_data.str2index(' '.join(field[6:])))
+            if (field[0] != filename):
+                print(f"WARNING: filename of first record is {filename} but filename of a different record is {field[0]}")
+            
+            # # label index
+            # labels.append(preprocess_data.str2index(' '.join(field[6:])))
 
             # start, end info
             start, end = float(field[3]), float(field[4])
             offsets.append(start)
             durs.append(end - start)
 
+    # load wave file
+    wave_file = os.path.join(parent_path, f"sph/{filename}.sph.wav")
+    if not os.path.exists( wave_file ):
+        sph_file = wave_file.rsplit('.',1)[0]
+        if os.path.exists( sph_file ):
+            convert_sph( sph_file, wave_file )
+        else:
+            raise RuntimeError("Missing sph file from TedLium corpus at %s"%(sph_file))
+    sound = parselmouth.Sound(wave_file)
+    target_filename = 'pjs/' + filename + '.csv'
+    
+    # check if file has already been extracted as csv
+    if os.path.exists( target_filename ):
+        df = pd.read_csv(target_filename)
+        if (len(df.index) == len(offsets)):
+            return df
+        else:
+            # csv does not have expected number of records.
+            print(f"{target_filename} exists but has a length of {len(df.index)} instead of the expected length of {len(offsets)}")
+            print("Attempting to extract features and overwrite file")
+
+    # extract features and save results
+    feature_dfs = []
+    for i, (offset, dur) in enumerate(zip(offsets, durs)):
         
-        # save results
-        for i, (wave_file, label, offset, dur) in enumerate(zip(wave_files, labels, offsets, durs)):
-            sound = parselmouth.Sound(wave_file)
-            fn = "%s-%.2f" % (wave_file.split('/')[-1], offset)
-            target_filename = 'pjs/' + fn + '.csv'
-            if os.path.exists( target_filename ):
-                continue
-            # print info
-            print("TEDLIUM corpus preprocessing (%d / %d) - '%s-%.2f]" % (i, len(wave_files), wave_file, offset))
-            # load wave file
-            if not os.path.exists( wave_file ):
-                sph_file = wave_file.rsplit('.',1)[0]
-                if os.path.exists( sph_file ):
-                    convert_sph( sph_file, wave_file )
-                else:
-                    raise RuntimeError("Missing sph file from TedLium corpus at %s"%(sph_file))
-            # wave, sr = librosa.load(wave_file, mono=True, offset=offset, duration=dur)
+        # print(f"TEDLIUM corpus preprocessing ({i} / {len(offsets)}) - '{filename}-%{offset:.1f}]")
+        
+        sound_bite = sound.extract_part(from_time=offset, to_time=offset+dur)
+        feature_df = measurePitch(sound_bite, f0min, f0max, unit)
+        feature_df.insert(loc=0, column="filename", value=[filename])
+        feature_df.insert(loc=1, column="start", value=[offset])
+        feature_df.insert(loc=2, column="duration", value=[dur])
+        print(feature_df)
+        feature_dfs.append(feature_df)
 
-            # # get mfcc feature
-            # mfcc = librosa.feature.mfcc(y=wave, sr=16000)
-            sound_bite = sound.extract_part(from_time=offset, to_time=offset+dur)
-            features = measurePitch(sound_bite, f0min, f0max, unit)
-            features.insert(loc=0, column="filename", value=[os.path.basename(os.path.abspath(wave_file))])
-            features.insert(loc=1, column="start", value=[offset])
-            features.insert(loc=2, column="duration", value=[dur])
-            print(features)
-            features.to_csv(target_filename, index=False)
-
-        # # save result ( exclude small mfcc data to prevent ctc loss )
-        # if len(label) < mfcc.shape[1]:
-        #     # filename
-
-        #     # save meta info
-        #     writer.writerow([fn] + label)
-
-        #     # save mfcc
-        #     np.save(target_filename, mfcc, allow_pickle=False)
+    feature_df_combined: pd.DataFrame = pd.concat(feature_dfs, ignore_index=True)
+    feature_df_combined.to_csv(target_filename, index=False)
+    return feature_df_combined
 
 def runPCA(df):
     #Z-score the Jitter and Shimmer measurements
