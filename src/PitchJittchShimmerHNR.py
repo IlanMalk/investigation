@@ -96,7 +96,8 @@ def measurePitchTed(stm, f0min, f0max, unit):
             features.insert(loc=0, column="filename", value=[os.path.basename(os.path.abspath(wave_file))])
             features.insert(loc=1, column="start", value=[offset])
             features.insert(loc=2, column="duration", value=[dur])
-            features.to_csv(target_filename)
+            print(features)
+            features.to_csv(target_filename, index=False)
 
         # # save result ( exclude small mfcc data to prevent ctc loss )
         # if len(label) < mfcc.shape[1]:
