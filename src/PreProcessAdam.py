@@ -6,7 +6,7 @@ import pathlib
 def changeFileExtension():
     i=0
     path1="C:/Users/Adam Blumenthal/Documents/Electrical Engineering/Year 4/Lab/investigation/investigation/src/AudioTranscriptsTED_Lium3/"
-    path2="C:/Users/Adam Blumenthal/Documents/Electrical Engineering/Year 4/Lab/investigation/investigation/src/TedTranscripts/"
+    path2="C:/Users/Adam Blumenthal/Documents/Electrical Engineering/Year 4/Lab/investigation/investigation/src/TedTranscripts2/"
     #path=os.path.join()
     for filename in os.listdir(path1):
         #my_source =path1 + filename

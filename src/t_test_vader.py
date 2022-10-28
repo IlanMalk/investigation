@@ -39,5 +39,18 @@ for row in csvreader:
 data_ted=pd.read_csv(ted)
 ted_pos=data_ted.pos.tolist()
 debate_pos=data_debate.pos.tolist()
-result_pos=stats.ttest_ind(ted_pos, debate_pos, equal_var=False)
+result_pos=stats.ttest_ind(ted_pos, debate_pos, equal_var=True)
 print(result_pos)
+
+ted_compound=data_ted.compound.tolist()
+debate_compound=data_debate.compound.tolist()
+result_compound=stats.ttest_ind(ted_compound, debate_compound, equal_var=False)
+print(result_compound)
+
+ted_compound=data_ted.compound.tolist()
+debate_compound=data_debate.compound.tolist()
+result_compound=stats.ttest_ind(ted_compound, debate_compound, equal_var=True)
+print(result_compound)
+
+result_compound_anova=stats.f_oneway(ted_compound,debate_compound)
+print(result_compound_anova)
