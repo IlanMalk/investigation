@@ -148,3 +148,5 @@ profiling/
 *.sph
 *.npy
 *.stm
+*.png
+!results/*
