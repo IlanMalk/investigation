@@ -10,6 +10,9 @@ from parselmouth.praat import call # type: ignore
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
+from preprocess_ted import convert_sph
+import preprocess_data
+
 def measurePitch(voiceID, f0min, f0max, unit):
     sound = parselmouth.Sound(voiceID) # read the sound
     pitch = call(sound, "To Pitch", 0.0, f0min, f0max) #create a praat pitch object
@@ -32,6 +35,84 @@ def measurePitch(voiceID, f0min, f0max, unit):
     
 
     return pd.DataFrame({'meanF0': meanF0, 'stdevF0': stdevF0, 'hnr': hnr, 'localJitter': localJitter, 'localabsoluteJitter': localabsoluteJitter, 'rapJitter': rapJitter, 'ppq5Jitter': ppq5Jitter, 'ddpJitter': ddpJitter, 'localShimmer': localShimmer, 'localdbShimmer': localdbShimmer, 'apq3Shimmer': apq3Shimmer, 'apq5Shimmer': apq5Shimmer, 'apq11Shimmer': apq11Shimmer, 'ddaShimmer': ddaShimmer}, index = [0])
+
+def measurePitchTed(stm, f0min, f0max, unit):
+    # 
+
+    # parent_path = data_path + 'TEDLIUM_release2/' + category + '/'
+    labels = []
+    wave_files: list[str] = [] 
+    offsets = []
+    durs = []
+
+    # create csv writer
+    # with open(csv_path, 'w') as csv_file:
+        # writer = csv.writer(csv_file, delimiter=',')
+
+        # read STM file list
+        # stm_list = glob.glob(parent_path + 'stm/*')
+        # print(stm_list)
+        # for stm in stm_list:
+    parent_path = os.path.join(os.path.dirname(os.path.abspath(stm)), os.pardir)
+    
+    # extract info from transcript
+    with open(stm, 'rt') as f:
+        records = f.readlines()
+        filename: str = records[0].split()[0]
+
+        for record in records:
+            field = record.split()
+
+            if (field[0] != filename):
+                print(f"WARNING: filename of first record is {filename} but filename of a different record is {field[0]}")
+            
+            # # label index
+            # labels.append(preprocess_data.str2index(' '.join(field[6:])))
+
+            # start, end info
+            start, end = float(field[3]), float(field[4])
+            offsets.append(start)
+            durs.append(end - start)
+
+    # load wave file
+    wave_file = os.path.join(parent_path, f"sph/{filename}.sph.wav")
+    if not os.path.exists( wave_file ):
+        sph_file = wave_file.rsplit('.',1)[0]
+        if os.path.exists( sph_file ):
+            convert_sph( sph_file, wave_file )
+        else:
+            raise RuntimeError("Missing sph file from TedLium corpus at %s"%(sph_file))
+    sound = parselmouth.Sound(wave_file)
+    target_filename = 'pjs/' + filename + '.csv'
+    
+    # check if file has already been extracted as csv
+    if os.path.exists( target_filename ):
+        df = pd.read_csv(target_filename)
+        if (len(df.index) == len(offsets)):
+            return df
+        else:
+            # csv does not have expected number of records.
+            print(f"{target_filename} exists but has a length of {len(df.index)} instead of the expected length of {len(offsets)}")
+            print("Attempting to extract features and overwrite file")
+
+    # extract features and save results
+    feature_dfs = []
+    for i, (offset, dur) in enumerate(zip(offsets, durs)):
+        
+        # print(f"TEDLIUM corpus preprocessing ({i} / {len(offsets)}) - '{filename}-%{offset:.1f}]")
+        
+        sound_bite = sound.extract_part(from_time=offset, to_time=offset+dur)
+        feature_df = measurePitch(sound_bite, f0min, f0max, unit)
+        feature_df.insert(loc=0, column="filename", value=[filename])
+        feature_df.insert(loc=1, column="start", value=[offset])
+        feature_df.insert(loc=2, column="duration", value=[dur])
+        # print(feature_df)
+        feature_dfs.append(feature_df)
+
+    feature_df_combined: pd.DataFrame = pd.concat(feature_dfs, ignore_index=True)
+    feature_df_combined.to_csv(target_filename, index=False)
+    return feature_df_combined
+
 def runPCA(df):
     #Z-score the Jitter and Shimmer measurements
     features = ['localJitter', 'localabsoluteJitter', 'rapJitter', 'ppq5Jitter', 'ddpJitter',
@@ -51,29 +132,38 @@ def runPCA(df):
 
 def main():
 
-    file_list: list[str] = []
-    feature_df_list: list[pd.DataFrame] = []
-    audio_dir: str = sys.argv[1]
-    if not os.path.isdir(audio_dir):
-        raise NotADirectoryError("ERROR: please enter a directory as a command line argument")   
+    # file_list: list[str] = []
+    # feature_df_list: list[pd.DataFrame] = []
     
-    audio_file_string: str = os.path.join(audio_dir, "*.wav")
-    wave_files = glob.glob(audio_file_string)
     # audio_files = os.path.join(os.path.dirname(__file__), os.path.pardir, "dataset", "audioFiles", "*.wav")
-    for wave_file in wave_files:
-        file_list.append(os.path.basename(wave_file))
-        sound = parselmouth.Sound(wave_file)
-        temp_df: pd.DataFrame = measurePitch(sound, 75, 500, "Hertz")
-        feature_df_list.append(temp_df)
-    df: pd.DataFrame = pd.concat(feature_df_list, ignore_index=True)
-    df.insert(loc=0, column="filename", value=file_list)
-    print(df)
-    pcaData: pd.DataFrame = runPCA(df)
+    # for wave_file in glob.glob(audio_files):
+    #     file_list.append(os.path.basename(wave_file))
+    #     sound = parselmouth.Sound(wave_file)
+    #     temp_df: pd.DataFrame = measurePitch(sound, 75, 500, "Hertz")
+    #     feature_df_list.append(temp_df)
+    # df: pd.DataFrame = pd.concat(feature_df_list, ignore_index=True)
+    # df.insert(loc=0, column="filename", value=file_list)
+    # print(df)
+    # pcaData: pd.DataFrame = runPCA(df)
 
-    df = pd.concat([df, pcaData], axis=1)
+    # df = pd.concat([df, pcaData], axis=1)
 
-    # Write out the updated dataframe
-    df.to_csv("processed_results5.csv", index=False)
+    # # Write out the updated dataframe
+    # df.to_csv("processed_results5.csv", index=False)
+
+    stm_dir = sys.argv[1]
+    print(stm_dir + "*.stm")
+    stm_files = glob.glob(stm_dir + "*.stm")
+    print(stm_files)
+    num_files = len(stm_files)
+    for i, stm_file in enumerate(stm_files):
+        df = measurePitchTed(stm_file, 75, 500, "Hertz")
+        # print(df)
+        print(f"Completed {i} / {num_files}")
+    return 0
+
+    # stm_file = "../tedlium/stm/911Mothers_2010W.stm"
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

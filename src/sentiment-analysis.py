@@ -19,8 +19,10 @@ def dict_mean(dict_list):
 
 def main():
     overall_scores = []
+    relative_dir_path = input("Enter relative path to directory containing transcripts\n")
     # path = "../../data/IBM-Debater-DR-EMNLP-2019.r4.full/full/speeches/trs.txt/*.txt"
-    path = os.path.join(os.path.dirname(__file__), os.pardir, "dataset", "textFiles", "*.txt")
+    # path = os.path.join(os.path.dirname(__file__), os.pardir, "dataset", "textFiles", "*.txt")
+    path = os.path.join(os.path.abspath(relative_dir_path), "*.txt")
     for filename in glob.glob(path):
         with open(filename, 'r') as f:
             sentences = f.readlines()

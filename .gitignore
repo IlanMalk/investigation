@@ -145,3 +145,8 @@ profiling/
 *.prof
 *.err
 *.ipynb
+*.sph
+*.npy
+*.stm
+*.png
+!results/*

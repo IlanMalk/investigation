@@ -97,32 +97,46 @@ def extract_prosodic_from_folder(dataset_folder: str, mpi_comm: MPIComm) -> pd.D
     
     return feature_df
 
+
 def extract_pitch_jitter_shimmer_from_folder(audio_dir: str, mpi_comm: MPIComm) -> pd.DataFrame:
+    """
+    Extracts various pitch, jitter and shimmer features from each file in audio_dir
+    Returns result as DataFrame
+    """
     file_list = []
+    # list containing the 1-row dataframes returned from measurePitch() function
     feature_df_list: list[pd.DataFrame] = []
+    # rank of this MPI process
     mpi_rank: int = mpi_comm.Get_rank()
+    # total number of MPI processes
     mpi_size: int = mpi_comm.Get_size()
 
     # audio_file_string = os.path.join(dataset_folder, "dataset", "audioFiles", "*.wav")
+    # check that audio_dir is a directory
     if not os.path.isdir(audio_dir):
         raise NotADirectoryError("ERROR: please enter a directory as a command line argument")   
     
     audio_file_string: str = os.path.join(audio_dir, "*.wav")
     wave_files = glob.glob(audio_file_string)
+    # calculate number of files that this process will execute (for progress bar)
     files_for_process = len(wave_files) // mpi_size + int(mpi_rank < len(wave_files) % mpi_size)
     progress_bar = ProgressBar(files_for_process)
 
+    # loop through files and extract features
     for (idx, wave_file) in enumerate(wave_files):
         if mpi_rank == (idx % mpi_size):
             sound = parselmouth.Sound(wave_file)
             feature_df: pd.DataFrame = measurePitch(sound, 75, 500, "Hertz")
             filename = os.path.basename(wave_file)
+            # add the filename to the dataframe
             feature_df.insert(loc=0, column="filename", value=[filename])
             feature_df_list.append(feature_df)
             progress_bar.update()
 
+    # concatenate features from this process's files into single DataFrame
     df: pd.DataFrame = pd.concat(feature_df_list, ignore_index=True)
     progress_bar.done()
+    # communicate results to master process
     if mpi_rank != 0:
         response = df
         mpi_comm.gather(response)

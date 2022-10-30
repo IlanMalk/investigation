@@ -24,7 +24,7 @@ data=pd.read_csv(pjs)
 f0=data.meanF0.tolist()
 #print(f0)
 
-l=stats.ttest_1samp(f0, popmean=130)
+l=stats.ttest_1samp(f0, popmean=165)
 print(l)
 
 hnr=data.hnr.tolist()
@@ -72,4 +72,6 @@ ppq5Jitter=data.ppq5Jitter.tolist()
 
 ppq5Jitter1=stats.ttest_1samp(ppq5Jitter, popmean=0.0190)
 print(ppq5Jitter1)
-
+b=[17.3, 20]
+welch=stats.ttest_ind(hnr, b, axis=0, equal_var=False, nan_policy='propagate', permutations=None, random_state=None, alternative='two-sided', trim=0)
+print(welch)
