@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import parselmouth
 import os
+import sys
 
 from parselmouth.praat import call # type: ignore
 from sklearn.decomposition import PCA
@@ -105,7 +106,7 @@ def measurePitchTed(stm, f0min, f0max, unit):
         feature_df.insert(loc=0, column="filename", value=[filename])
         feature_df.insert(loc=1, column="start", value=[offset])
         feature_df.insert(loc=2, column="duration", value=[dur])
-        print(feature_df)
+        # print(feature_df)
         feature_dfs.append(feature_df)
 
     feature_df_combined: pd.DataFrame = pd.concat(feature_dfs, ignore_index=True)
@@ -150,9 +151,19 @@ def main():
     # # Write out the updated dataframe
     # df.to_csv("processed_results5.csv", index=False)
 
-    stm_file = "../tedlium/stm/911Mothers_2010W.stm"
-    measurePitchTed(stm_file, 75, 500, "Hertz")
+    stm_dir = sys.argv[1]
+    print(stm_dir + "*.stm")
+    stm_files = glob.glob(stm_dir + "*.stm")
+    print(stm_files)
+    num_files = len(stm_files)
+    for i, stm_file in enumerate(stm_files):
+        df = measurePitchTed(stm_file, 75, 500, "Hertz")
+        # print(df)
+        print(f"Completed {i} / {num_files}")
+    return 0
+
+    # stm_file = "../tedlium/stm/911Mothers_2010W.stm"
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
