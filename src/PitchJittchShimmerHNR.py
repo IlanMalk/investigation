@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import parselmouth
 import os
+import sys
 
 from parselmouth.praat import call # type: ignore
 from sklearn.decomposition import PCA
@@ -52,9 +53,14 @@ def main():
 
     file_list: list[str] = []
     feature_df_list: list[pd.DataFrame] = []
+    audio_dir: str = sys.argv[1]
+    if not os.path.isdir(audio_dir):
+        raise NotADirectoryError("ERROR: please enter a directory as a command line argument")   
     
-    audio_files = os.path.join(os.path.dirname(__file__), os.path.pardir, "dataset", "audioFiles", "*.wav")
-    for wave_file in glob.glob(audio_files):
+    audio_file_string: str = os.path.join(audio_dir, "*.wav")
+    wave_files = glob.glob(audio_file_string)
+    # audio_files = os.path.join(os.path.dirname(__file__), os.path.pardir, "dataset", "audioFiles", "*.wav")
+    for wave_file in wave_files:
         file_list.append(os.path.basename(wave_file))
         sound = parselmouth.Sound(wave_file)
         temp_df: pd.DataFrame = measurePitch(sound, 75, 500, "Hertz")

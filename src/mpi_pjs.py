@@ -163,5 +163,5 @@ if __name__ == '__main__':
 
 # REMEMBER: IF ON CLUSTER, USE -hostfile or ssh away from head node
 # mpiexec -n 2 python3 mpi_pjs.py audio/
-# time mpiexec -hostfile /home/shared/machinefile -np 10 python3 -m mpi4py mpi_pjs.py
+# time mpiexec -hostfile /home/shared/machinefile -np 10 python3 -m mpi4py src/mpi_pjs.py dataset/audioFiles/
 
