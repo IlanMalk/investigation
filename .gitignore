@@ -149,4 +149,6 @@ profiling/
 *.npy
 *.stm
 *.png
+*.out
 !results/*
+!results/pjs-ted/*.csv
