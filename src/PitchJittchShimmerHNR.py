@@ -10,8 +10,7 @@ from parselmouth.praat import call # type: ignore
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
-from preprocess_ted import convert_sph
-import preprocess_data
+from sph2wav import convert_sph
 
 def measurePitch(voiceID, f0min, f0max, unit):
     sound = parselmouth.Sound(voiceID) # read the sound
@@ -39,9 +38,6 @@ def measurePitch(voiceID, f0min, f0max, unit):
 def measurePitchTed(stm, f0min, f0max, unit):
     # 
 
-    # parent_path = data_path + 'TEDLIUM_release2/' + category + '/'
-    labels = []
-    wave_files: list[str] = [] 
     offsets = []
     durs = []
 
@@ -75,9 +71,12 @@ def measurePitchTed(stm, f0min, f0max, unit):
             durs.append(end - start)
 
     # load wave file
-    wave_file = os.path.join(parent_path, f"sph/{filename}.sph.wav")
+    wave_file = os.path.join(parent_path, f"wav/{filename}.wav")
+    print(f"Wave file: {wave_file}")
     if not os.path.exists( wave_file ):
-        sph_file = wave_file.rsplit('.',1)[0]
+        sph_file = os.path.join(parent_path, f"sph/{filename}.sph")
+        print(f"SPH file: {sph_file}")
+
         if os.path.exists( sph_file ):
             convert_sph( sph_file, wave_file )
         else:
@@ -151,14 +150,14 @@ def main():
     # # Write out the updated dataframe
     # df.to_csv("processed_results5.csv", index=False)
 
-    stm_dir = sys.argv[1]
-    print(stm_dir + "*.stm")
+    stm_dir = sys.argv[1] # take stm directory from command line argument
+    num_files = 200 # number of files to process
     stm_files = glob.glob(stm_dir + "*.stm")
-    print(stm_files)
-    num_files = len(stm_files)
+    # take first num_files files, after sorting alphabetically
+    stm_files.sort()
+    stm_files = stm_files[ : num_files]
     for i, stm_file in enumerate(stm_files):
         df = measurePitchTed(stm_file, 75, 500, "Hertz")
-        # print(df)
         print(f"Completed {i} / {num_files}")
     return 0
 
@@ -167,3 +166,6 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+# /data1/22p98/TEDLIUM_release-3/data/stm/
