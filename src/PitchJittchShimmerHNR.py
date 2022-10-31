@@ -151,14 +151,14 @@ def main():
     # # Write out the updated dataframe
     # df.to_csv("processed_results5.csv", index=False)
 
-    stm_dir = sys.argv[1]
-    print(stm_dir + "*.stm")
+    stm_dir = sys.argv[1] # take stm directory from command line argument
+    num_files = 200 # number of files to process
     stm_files = glob.glob(stm_dir + "*.stm")
-    print(stm_files)
-    num_files = len(stm_files)
+    # take first num_files files, after sorting alphabetically
+    stm_files.sort()
+    stm_files = stm_files[ : num_files]
     for i, stm_file in enumerate(stm_files):
         df = measurePitchTed(stm_file, 75, 500, "Hertz")
-        # print(df)
         print(f"Completed {i} / {num_files}")
     return 0
 
@@ -167,3 +167,6 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+# /data1/22p98/TEDLIUM_release-3/data/stm/
