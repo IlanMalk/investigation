@@ -129,27 +129,39 @@ def runPCA(df):
     principalDf
     return principalDf
 
-def main():
-
-    # file_list: list[str] = []
-    # feature_df_list: list[pd.DataFrame] = []
+def extractDebatesPitchFromFolder():
+    file_list: list[str] = []
+    feature_df_list: list[pd.DataFrame] = []
     
-    # audio_files = os.path.join(os.path.dirname(__file__), os.path.pardir, "dataset", "audioFiles", "*.wav")
-    # for wave_file in glob.glob(audio_files):
-    #     file_list.append(os.path.basename(wave_file))
-    #     sound = parselmouth.Sound(wave_file)
-    #     temp_df: pd.DataFrame = measurePitch(sound, 75, 500, "Hertz")
-    #     feature_df_list.append(temp_df)
-    # df: pd.DataFrame = pd.concat(feature_df_list, ignore_index=True)
-    # df.insert(loc=0, column="filename", value=file_list)
-    # print(df)
+    audio_files = os.path.join(os.path.dirname(__file__), os.path.pardir, "dataset", "audioFiles", "*.wav")
+    for wave_file in glob.glob(audio_files):
+        filename = os.path.basename(wave_file).split(".")[0]
+        target_csv = "pjs-debates/" + filename + ".csv"
+        # check if file has already been extracted as csv
+        if os.path.exists( target_csv ):
+            df = pd.read_csv(target_csv)
+            if (len(df.index == 1)):
+                continue
+            else:
+                print(f"Overwriting {target_csv}")
+            
+        sound = parselmouth.Sound(wave_file)
+        feature_df: pd.DataFrame = measurePitch(sound, 75, 500, "Hertz")
+        feature_df.insert(loc=0, column="filename", value=[filename])
+        speaker = filename.split("_")[0]
+        feature_df.insert(loc=1, column="speaker", value=[speaker])
+        print(feature_df)
+        feature_df.to_csv(target_csv)
+
     # pcaData: pd.DataFrame = runPCA(df)
 
     # df = pd.concat([df, pcaData], axis=1)
 
-    # # Write out the updated dataframe
-    # df.to_csv("processed_results5.csv", index=False)
+    # Write out the updated dataframe
+    return 0
 
+
+def extractTedFromFolder():
     stm_dir = sys.argv[1] # take stm directory from command line argument
     num_files = 200 # number of files to process
     stm_files = glob.glob(stm_dir + "*.stm")
@@ -161,8 +173,8 @@ def main():
         print(f"Completed {i} / {num_files}")
     return 0
 
-    # stm_file = "../tedlium/stm/911Mothers_2010W.stm"
-
+def main():
+    return extractDebatesPitchFromFolder()
 
 if __name__ == "__main__":
     sys.exit(main())
