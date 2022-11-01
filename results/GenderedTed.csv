@@ -1,11 +1,11 @@
-FileName,Gender
-911Mothers_2010W.sph,M
+filename,gender
+911Mothers_2010W.sph,F
 AalaElKhani_2016X.sph,F
 AaronHuey_2010X.sph,M
 AaronKoblin_2011.sph,M
 AaronOConnell_2011.sph,M
 AbeDavis_2015.sph,M
-AbhaDawesar_2013G.sph,M
+AbhaDawesar_2013G.sph,F
 AbigailMarsh_2016T.sph,F
 AbigailWashburn_2012U.sph,F
 AbrahamVerghese_2011G.sph,M
@@ -33,8 +33,8 @@ AimeeMullins_1998.sph,F
 AimeeMullins_2009U.sph,F
 AjitNarayanan_2013.sph,M
 AJJacobs_2007P.sph,M
-AJJacobs_2011P.sph,m
-AJJacobs_2014A.sph,m
+AJJacobs_2011P.sph,M
+AJJacobs_2014A.sph,M
 AlaaMurabit_2015W.sph,F
 AlaindeBotton_2009G.sph,M
 AlaindeBotton_2011G.sph,M
@@ -93,7 +93,7 @@ AmandaPalmer_2013.sph,F
 AmberCase_2010W.sph,F
 AmeenahGuribFakim_2014G.sph,F
 AmeeraHarouda_2016.sph,F
-AmiKlin_2011X.sph,F
+AmiKlin_2011X.sph,M
 AmitSood_2011.sph,M
 AmitSood_2016.sph,M
 AmoryLovins_2005.sph,M
@@ -199,4 +199,3 @@ AtulGawande_2012.sph,M
 AubreydeGrey_2005G.sph,M
 AudreyChoi_2015S.sph,F
 AukeIjspeert_2015G.sph,M
-,76
