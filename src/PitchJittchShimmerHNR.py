@@ -129,14 +129,14 @@ def runPCA(df):
     principalDf
     return principalDf
 
-def extractDebatesPitchFromFolder():
+def extractDebatesPitchFromFolder(output_dir):
     file_list: list[str] = []
     feature_df_list: list[pd.DataFrame] = []
     
     audio_files = os.path.join(os.path.dirname(__file__), os.path.pardir, "dataset", "audioFiles", "*.wav")
     for wave_file in glob.glob(audio_files):
         filename = os.path.basename(wave_file).split(".")[0]
-        target_csv = "pjs-debates/" + filename + ".csv"
+        target_csv =  output_dir + filename + ".csv"
         # check if file has already been extracted as csv
         if os.path.exists( target_csv ):
             df = pd.read_csv(target_csv)
@@ -174,7 +174,7 @@ def extractTedFromFolder():
     return 0
 
 def main():
-    return extractDebatesPitchFromFolder()
+    return extractDebatesPitchFromFolder("pjs-debates/")
 
 if __name__ == "__main__":
     sys.exit(main())
