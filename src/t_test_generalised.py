@@ -7,18 +7,22 @@ import numpy as np
 def t_test_dataframes(df_debates, df_ted):
     common_columns = np.intersect1d(df_debates.columns, df_ted.columns)
     # print out unused columns
-    unused_columns_debates = []
+    columns_to_avoid = ["speaker"]
+    unused_columns_debates = columns_to_avoid
     for column in df_debates.columns:
         if column not in common_columns:
             unused_columns_debates.append(column)
     print(f"Debates unused columns: {unused_columns_debates}")
-    unused_columns_ted = []
+    unused_columns_ted = columns_to_avoid
     for column in df_ted.columns:
         if column not in common_columns:
             unused_columns_ted.append(column)
     print(f"Ted unused columns: {unused_columns_ted}")
 
     for column in common_columns:
+        if column in columns_to_avoid:
+            continue
+
         print("------------------------------")
         print(column)
         debates_values = df_debates[column].values
@@ -90,8 +94,8 @@ def t_test_dataframes(df_debates, df_ted):
 def main():
     # df_debates = pd.read_csv("../results/vader_full.csv")
     # df_ted = pd.read_csv("../results/vaderTED.csv")
-    df_debates = pd.read_csv("../results/pitch_jitter_shimmer_cluster.csv")
-    df_ted = pd.read_csv("../results/pjs-combined.csv")
+    df_debates = pd.read_csv("../results/pjs-debates-grouped-speaker.csv")
+    df_ted = pd.read_csv("../results/pjs-ted-grouped-speaker.csv")
     t_test_dataframes(df_debates, df_ted)
 
 if __name__ == "__main__":
