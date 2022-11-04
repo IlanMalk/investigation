@@ -7,6 +7,7 @@ def group_by_speaker(feature_df):
         speakers = [filename.split("_")[0] for filename in feature_df["filename"].tolist()]
         feature_df["speaker"] = speakers
     grouped = feature_df.groupby(["speaker"]).mean()
+    grouped.reset_index(inplace=True)
     return grouped
 
 def main():
@@ -21,7 +22,7 @@ def main():
     feature_df = pd.read_csv("../results/vaderTED.csv")
     grouped = group_by_speaker(feature_df)
     print(grouped)
-    grouped.to_csv("../vader-ted-grouped-speaker.csv")
+    grouped.to_csv("../vader-ted-grouped-speaker.csv", index=False)
 
 
 
