@@ -21,7 +21,8 @@ def gender_join(feature_df: pd.DataFrame, gender_df: pd.DataFrame, on="speaker")
         print(gender_df)
     
     # left join since we may have multiple records in feature_df for a single speaker
-    combined_df: pd.DataFrame = feature_df.merge(gender_df, on=on, how="left")
+    gender_df.drop_duplicates(subset=["speaker", "gender"], inplace=True, ignore_index=True)
+    combined_df: pd.DataFrame = feature_df.merge(gender_df, on=on, how="left", validate="m:1")
     print(combined_df)
         
     # check no n/a values in gender col
