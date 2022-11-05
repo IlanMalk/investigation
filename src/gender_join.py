@@ -21,7 +21,7 @@ def gender_join(feature_df: pd.DataFrame, gender_df: pd.DataFrame, on="speaker")
         print(gender_df)
     
     # left join since we may have multiple records in feature_df for a single speaker
-    combined_df: pd.DataFrame = feature_df.merge(gender_df, on=on, how="left", validate="m:1")
+    combined_df: pd.DataFrame = feature_df.merge(gender_df, on=on, how="left")
     print(combined_df)
         
     # check no n/a values in gender col
@@ -32,7 +32,7 @@ def gender_join(feature_df: pd.DataFrame, gender_df: pd.DataFrame, on="speaker")
         for record, na in zip(combined_df, gender_is_na):
             if na:
                 print(record)
-        return 1
+        raise Exception("Null genders")
 
     return combined_df
 
@@ -42,8 +42,8 @@ def main():
     feature_df = pd.read_csv("../results/pjs-ted-combined.csv")
     gender_df = pd.read_csv("../results/ted-gender.csv")
     combined_df = gender_join(feature_df, gender_df, on="filename")
-    if combined_df is 1:
-        print("ERRROR: gender_join failed")
+    if combined_df == 1:
+        print("ERROR: gender_join failed")
         return 1
     combined_df.to_csv("../results/pjs-ted-gender.csv", index=False)
     return 0
